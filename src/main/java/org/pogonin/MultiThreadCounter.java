@@ -2,6 +2,7 @@ package org.pogonin;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -58,16 +59,14 @@ public class MultiThreadCounter {
 
                 executor.submit(() -> {
                     try {
-                        while (true) {
-                            semaphores[finalI].acquire();
-                            if (count.get() > endCount) break;
+                        while (semaphores[finalI].tryAcquire(40, TimeUnit.MILLISECONDS)) {
+                            if (count.get() > endCount) return;
                             System.out.println(Thread.currentThread().getName() + ": " + count.getAndIncrement());
 
                             if (finalI < threadCount - 1)
                                 semaphores[finalI + 1].release();
                             else semaphores[0].release();
                         }
-
                     } catch (InterruptedException e) {
                         System.out.println(Thread.currentThread().getName() + ": " + e.getMessage());
                     }
@@ -75,5 +74,4 @@ public class MultiThreadCounter {
             }
         }
     }
-
 }
